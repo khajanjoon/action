@@ -1,0 +1,27 @@
+name: run main.py
+
+on:
+  schedule:
+    # Runs every minute
+    - cron: "*/1 * * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: checkout repo content
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'  # Use the version your script requires
+
+      - name: install python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: execute py script
+        run: python main.py  # Adjust the path if main.py is not in the root
