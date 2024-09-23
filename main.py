@@ -174,7 +174,6 @@ def get_public_ip():
         response = requests.get('https://api.ipify.org?format=json')
         ip_data = response.json()
         ip_address = ip_data.get('ip')
-        print(ip_address)
         return ip_address
     except requests.RequestException as e:
         print(f"Error fetching IP address: {e}")
@@ -184,8 +183,8 @@ async def main():
     try:
         ip_address = get_public_ip()
         if ip_address:
-            print(f"Public IP Address: {ip_address}")
             send_message(f"Public IP Address: {ip_address}")  # Send the IP address to Telegram
+            print(f"Public IP Address: {ip_address}")
         else:
             print("Failed to retrieve IP address.")
             send_message("Failed to retrieve Public IP Address.")  # Send error message to Telegram
