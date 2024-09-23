@@ -168,13 +168,26 @@ def send_message(message):
     else:
         print(f'Failed to send message. Error: {response.status_code} - {response.text}')
 
+def get_public_ip():
+    try:
+        # Fetch public IP address from an external service
+        response = requests.get('https://api.ipify.org?format=json')
+        ip_data = response.json()
+        ip_address = ip_data.get('ip')
+        return ip_address
+    except requests.RequestException as e:
+        print(f"Error fetching IP address: {e}")
+        return None
+
 async def main():
     try:
+        ip_address = get_public_ip()
         profile_task = asyncio.create_task(fetch_profile_data())
         position_task = asyncio.create_task(fetch_position_data())
         await asyncio.gather(position_task, profile_task)
     except Exception as e:
         print(f"An error occurred: {e}")
+        
 
 # Run the main coroutine once
 asyncio.run(main())
