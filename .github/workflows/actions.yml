@@ -1,4 +1,4 @@
-name: Run Python Script Every Minute
+name: run main.py
 
 on:
   schedule:
