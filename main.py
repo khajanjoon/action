@@ -185,14 +185,19 @@ async def main():
         ip_address = get_public_ip()
         if ip_address:
             print(f"Public IP Address: {ip_address}")
+            send_message(f"Public IP Address: {ip_address}")  # Send the IP address to Telegram
         else:
             print("Failed to retrieve IP address.")
-        
+            send_message("Failed to retrieve Public IP Address.")  # Send error message to Telegram
+
+        # Continue with the rest of the tasks
         profile_task = asyncio.create_task(fetch_profile_data())
         position_task = asyncio.create_task(fetch_position_data())
         await asyncio.gather(position_task, profile_task)
     except Exception as e:
         print(f"An error occurred: {e}")
+        send_message(f"An error occurred: {e}")  # Send the error message to Telegram
+
 
         
 
