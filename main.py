@@ -174,6 +174,7 @@ def get_public_ip():
         response = requests.get('https://api.ipify.org?format=json')
         ip_data = response.json()
         ip_address = ip_data.get('ip')
+        print(ip_address)
         return ip_address
     except requests.RequestException as e:
         print(f"Error fetching IP address: {e}")
