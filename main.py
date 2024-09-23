@@ -183,11 +183,17 @@ def get_public_ip():
 async def main():
     try:
         ip_address = get_public_ip()
+        if ip_address:
+            print(f"Public IP Address: {ip_address}")
+        else:
+            print("Failed to retrieve IP address.")
+        
         profile_task = asyncio.create_task(fetch_profile_data())
         position_task = asyncio.create_task(fetch_position_data())
         await asyncio.gather(position_task, profile_task)
     except Exception as e:
         print(f"An error occurred: {e}")
+
         
 
 # Run the main coroutine once
