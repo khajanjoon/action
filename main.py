@@ -6,10 +6,13 @@ import hashlib
 import hmac
 import time
 import datetime
+from decimal import Decimal
 
+api_key = 'WqLMWdFHsYrWt5dHELyBkZXzVw54s4'
+api_secret = 'ux8394Juap4ZzvA3oXPYkgVaR4MAza6BwsKWLTOVCFNcv5wgPi3HAb0Pqirm'
 
-api_key = 'IN2t13uftIUkZoOfCgbcQCYTaoeEEf'
-api_secret = '3mgt1SR3Fi5Qa1HALTQTw340kGQgxtHNub3Wqm2ekmVE0TLSMyloZYbDZFsU'
+BOT_TOKEN = '7003653511:AAGkx1MumC07d4gJh9zb9l7dCqDfyeTHjtY'
+CHAT_ID = '311396636'
 
 def generate_signature(method, endpoint, payload):
     timestamp = str(int(time.time()))
@@ -21,84 +24,30 @@ def generate_signature(method, endpoint, payload):
 
 def get_time_stamp():
     d = datetime.datetime.utcnow()
-    epoch = datetime.datetime(1970,1,1)
+    epoch = datetime.datetime(1970, 1, 1)
     return str(int((d - epoch).total_seconds()))
 
-async def fetch_profile_data():    
-    print("😀Sell Algo Live😀")
+def send_message(message):
+    url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
+    params = {'chat_id': CHAT_ID, 'text': message}
 
-async def place_target_order(order_type, side, order_product, order_size, stop_order_type, stop_price):
-    payload = {
-        "order_type": order_type,
-        "side": side,
-        "product_id": int(order_product),
-        "stop_order_type": stop_order_type,
-        "stop_price": stop_price,
-        "reduce_only": False,
-        "stop_trigger_method": "mark_price",
-        "size": order_size
-    }
-    print(payload)
-    
-    method = 'POST'
-    endpoint = '/v2/orders'
-    payload_str = json.dumps(payload)
-    signature, timestamp = generate_signature(method, endpoint, payload_str)
-    timestamp = get_time_stamp()
-
-    headers = {
-        'api-key': api_key,
-        'timestamp': timestamp,
-        'signature': signature,
-        'User-Agent': 'rest-client',
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.post('https://cdn.india.deltaex.org/v2/orders', json=payload, headers=headers)
-    
+    response = requests.post(url, json=params)
     if response.status_code == 200:
-        print(f"😀New Order Placed: {payload}😀")
+        print('Message sent successfully!')
     else:
-        print("Failed to place order. Status code:", response.status_code)
+        print(f'Failed to send message. Error: {response.status_code} - {response.text}')
 
-async def place_order(order_type, side, order_product_id, order_size, stop_order_type, target_value):
-    payload = {
-        "order_type": order_type,
-        "side": side,
-        "product_id": int(order_product_id),
-        "reduce_only": False,     
-        "size": order_size
-    }
-
-    method = 'POST'
-    endpoint = '/v2/orders'
-    payload_str = json.dumps(payload)
-    signature, timestamp = generate_signature(method, endpoint, payload_str)
-    timestamp = get_time_stamp()
-
-    headers = {
-        'api-key': api_key,
-        'timestamp': timestamp,
-        'signature': signature,
-        'User-Agent': 'rest-client',
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.post('https://cdn.india.deltaex.org/v2/orders', json=payload, headers=headers)
-    
-    if response.status_code == 200:
-        print(f"😀New Order Placed: {payload}😀")
-        await place_target_order("market_order", "buy", order_product_id, 1, "take_profit_order", target_value)
-    else:
-        print("Failed to place order. Status code:", response.status_code)
+async def fetch_profile_data():
+    print("Fetching profile data...")
+    send_message("Algo Start")    
 
 async def fetch_position_data():
+    print("Fetching position data...")
+    
     payload = ''
     method = 'GET'
     endpoint = '/v2/positions/margined'
-    payload_str = json.dumps(payload)
     signature, timestamp = generate_signature(method, endpoint, payload)
-
     headers = {
         'api-key': api_key,
         'timestamp': timestamp,
@@ -109,59 +58,32 @@ async def fetch_position_data():
 
     r = requests.get('https://cdn.india.deltaex.org/v2/positions/margined', headers=headers)
     position_data = r.json()
+    send_message("Algo Live")
 
-    for result in position_data["result"]:
-        product_id = result["product_id"]
-        product_symbol = result["product_symbol"]
-        realized_cashflow = result["realized_cashflow"]
-        realized_pnl = result["realized_pnl"]
-        size = result["size"]
-        unrealized_pnl = result["unrealized_pnl"]
-        entry_price = result["entry_price"]
-        mark_price = result["mark_price"]
+    for result in position_data.get("result", []):
+        product_symbol = result.get("product_symbol")
+        size = result.get("size")
+        unrealized_pnl = result.get("unrealized_pnl")
+        entry_price = result.get("entry_price")
+        mark_price = result.get("mark_price")
 
-        print("Product ID:", product_id, "Product Symbol:", product_symbol)
+        message = f"Symbol: {product_symbol}\n" \
+                  f"Size: {size}\n" \
+                  f"Unrealized PnL: {unrealized_pnl}\n" \
+                  f"Entry Price: {entry_price}\n" \
+                  f"Mark Price: {mark_price}\n"
         
-        percentage = int(size) * 0.75
-        price_value = float(entry_price) - (float(entry_price) * (percentage / 100))
-        target = round((float(mark_price) * 2 / 100 - float(mark_price)) * 20) / 20
-        target_value = abs(target)
-
-        print(f"Symbol: {product_symbol}\n"
-              f"Size: {size}\n"
-              f"Unrealized PnL: {round(float(unrealized_pnl), 2)}\n"
-              f"Entry Price: {round(float(entry_price), 2)}\n"
-              f"Next_Entry: {round(float(price_value), 2)}\n"
-              f"Mark Price: {round(float(mark_price), 2)}\n")
-
-        if float(mark_price) > price_value:
-            print("Ready to sell")
-            await place_order("market_order", "sell", product_id, 1, 0, target_value)
-
-def get_public_ip():
-    try:
-        response = requests.get('https://api.ipify.org?format=json')
-        ip_data = response.json()
-        ip_address = ip_data.get('ip')
-        return ip_address
-    except requests.RequestException as e:
-        print(f"Error fetching IP address: {e}")
-        return None
+        print(message)
 
 async def main():
     try:
-        ip_address = get_public_ip()
-        if ip_address:
-            print(f"Public IP Address: {ip_address}")
-        else:
-            print("Failed to retrieve IP address.")
-
-        profile_task = asyncio.create_task(fetch_profile_data())
-        position_task = asyncio.create_task(fetch_position_data())
-        await asyncio.gather(position_task, profile_task)
+        # Perform only one iteration of tasks
+        await fetch_profile_data()
+        await fetch_position_data()
     except Exception as e:
         print(f"An error occurred: {e}")
+    finally:
+        print("Script finished execution.")
 
-
-# Run the main coroutine once
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
